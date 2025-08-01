@@ -1,0 +1,31 @@
+name: "Deploy to stage"
+description: "Deploy the content from source stage to destination stage"
+
+inputs:
+  source:
+    description: "Source S3 URI (e.g., s3://my-bucket/source/)"
+    required: true
+  destination:
+    description: "Destination S3 URI (e.g., s3://my-bucket/dest/)"
+    required: true
+  aws-region:
+    required: true
+  role-to-assume:
+    required: true
+  role-session-name:
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ inputs.role-to-assume }}
+        role-session-name: ${{ inputs.role-session-name }}
+        aws-region: ${{ inputs.aws-region }}
+
+    - name: Sync from source s3 location to destination s3 location
+      run: |
+        aws s3 sync "${{ inputs.source }}" "${{ inputs.destination }}" --delete
+      shell: bash
