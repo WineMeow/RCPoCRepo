@@ -1,36 +1,99 @@
-# This is a basic workflow to help you get started with Actions
+name: CICD workflow for RC PoC
 
-name: CI
-
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+    branches:
+      - main
+  
+env:
+  REPO_S3_LOCATION_URI : "s3://amazon-sagemaker-891377342935-us-west-2-ak9r9o3k52qgeo/rc-poc-test/repo/"
+  DEV_S3_LOCATION_URI : "s3://amazon-sagemaker-891377342935-us-west-2-ak9r9o3k52qgeo/rc-poc-test/dev/"
+  BETA_S3_LOCATION_URI : "s3://amazon-sagemaker-891377342935-us-west-2-ak9r9o3k52qgeo/rc-poc-test/beta/"
+  GAMMA_S3_LOCATION_URI : "s3://amazon-sagemaker-891377342935-us-west-2-ak9r9o3k52qgeo/rc-poc-test/gamma/"
+  PROD_S3_LOCATION_URI : "s3://amazon-sagemaker-891377342935-us-west-2-ak9r9o3k52qgeo/rc-poc-test/prod/"
+  AWS_REGION : "us-east-1"
+  ROLE_TO_ASSUME: "arn:aws:iam::891377342935:role/release-center-github-actions-poc-role"
+  ROLE_TO_ASSUME_SESSION_NAME: "ReleaseCenterSession"
+  
+permissions:
+  id-token: write   # This is required for requesting the JWT
+  contents: read    # This is required for actions/checkout
+  
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
+  upload-repo-to-s3:
     runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Git clone the repository
+        uses: actions/checkout@v4
+        
+      - name: Deploy repo to dev
+        uses: ./.github/actions/deploy-util
+        with:
+          role-to-assume: ${{ env.ROLE_TO_ASSUME }}
+          role-session-name: ${{ env.ROLE_TO_ASSUME_SESSION_NAME }}
+          aws-region: ${{ env.AWS_REGION }}
+          source: "."
+          destination: ${{ env.REPO_S3_LOCATION_URI }}
+
+  deploy-dev:
+    name: Deploy to Dev
+    runs-on: ubuntu-latest
+    needs: upload-repo-to-s3
+    steps:
       - uses: actions/checkout@v4
+      - name: Deploy repo to dev
+        uses: ./.github/actions/deploy-util
+        with:
+          role-to-assume: ${{ env.ROLE_TO_ASSUME }}
+          role-session-name: ${{ env.ROLE_TO_ASSUME_SESSION_NAME }}
+          aws-region: ${{ env.AWS_REGION }}
+          source: ${{ env.REPO_S3_LOCATION_URI }}
+          destination: ${{ env.DEV_S3_LOCATION_URI }}
 
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
+  deploy-beta:
+    name: Deploy to Beta
+    runs-on: ubuntu-latest
+    needs: deploy-dev
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy repo to beta
+        uses: ./.github/actions/deploy-util
+        with:
+          role-to-assume: ${{ env.ROLE_TO_ASSUME }}
+          role-session-name: ${{ env.ROLE_TO_ASSUME_SESSION_NAME }}
+          aws-region: ${{ env.AWS_REGION }}
+          source: ${{ env.DEV_S3_LOCATION_URI }}
+          destination: ${{ env.BETA_S3_LOCATION_URI }}
 
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
-        run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+
+  deploy-gamma:
+    name: Deploy to Gamma
+    runs-on: ubuntu-latest
+    needs: deploy-beta
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy repo to gamma
+        uses: ./.github/actions/deploy-util
+        with:
+          role-to-assume: ${{ env.ROLE_TO_ASSUME }}
+          role-session-name: ${{ env.ROLE_TO_ASSUME_SESSION_NAME }}
+          aws-region: ${{ env.AWS_REGION }}
+          source: ${{ env.BETA_S3_LOCATION_URI }}
+          destination: ${{ env.GAMMA_S3_LOCATION_URI }}
+
+          
+  deploy-prod:
+    name: Deploy to Prod
+    runs-on: ubuntu-latest
+    needs: deploy-gamma
+    environment: prod
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy repo to dev
+        uses: ./.github/actions/deploy-util
+        with:
+          role-to-assume: ${{ env.ROLE_TO_ASSUME }}
+          role-session-name: ${{ env.ROLE_TO_ASSUME_SESSION_NAME }}
+          aws-region: ${{ env.AWS_REGION }}
+          source: ${{ env.GAMMA_S3_LOCATION_URI }}
+          destination: ${{ env.PROD_S3_LOCATION_URI }}
