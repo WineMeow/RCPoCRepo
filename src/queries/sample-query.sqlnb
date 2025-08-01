@@ -1,0 +1,3 @@
+%%sql --name undefined
+
+select * from schemaA.tableA
