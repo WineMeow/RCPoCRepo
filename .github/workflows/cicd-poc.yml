@@ -6,11 +6,11 @@ on:
       - main
   
 env:
-  REPO_S3_LOCATION_URI : "s3://amazon-sagemaker-891377342935-us-west-2-ak9r9o3k52qgeo/rc-poc-test/repo/"
-  DEV_S3_LOCATION_URI : "s3://amazon-sagemaker-891377342935-us-west-2-ak9r9o3k52qgeo/rc-poc-test/dev/"
-  BETA_S3_LOCATION_URI : "s3://amazon-sagemaker-891377342935-us-west-2-ak9r9o3k52qgeo/rc-poc-test/beta/"
-  GAMMA_S3_LOCATION_URI : "s3://amazon-sagemaker-891377342935-us-west-2-ak9r9o3k52qgeo/rc-poc-test/gamma/"
-  PROD_S3_LOCATION_URI : "s3://amazon-sagemaker-891377342935-us-west-2-ak9r9o3k52qgeo/rc-poc-test/prod/"
+  # REPO_S3_LOCATION_URI : "s3://amazon-sagemaker-891377342935-us-west-2-ak9r9o3k52qgeo/shared/repo/"
+  DEV_S3_LOCATION_URI : "s3://amazon-sagemaker-891377342935-us-west-2-ak9r9o3k52qgeo/shared/dev/"
+  BETA_S3_LOCATION_URI : "s3://amazon-sagemaker-891377342935-us-west-2-ak9r9o3k52qgeo/shared/beta/"
+  GAMMA_S3_LOCATION_URI : "s3://amazon-sagemaker-891377342935-us-west-2-ak9r9o3k52qgeo/shared/gamma/"
+  PROD_S3_LOCATION_URI : "s3://amazon-sagemaker-891377342935-us-west-2-ak9r9o3k52qgeo/shared/prod/"
   AWS_REGION : "us-east-1"
   ROLE_TO_ASSUME: "arn:aws:iam::891377342935:role/release-center-github-actions-poc-role"
   ROLE_TO_ASSUME_SESSION_NAME: "ReleaseCenterSession"
@@ -20,25 +20,25 @@ permissions:
   contents: read    # This is required for actions/checkout
   
 jobs:
-  upload-repo-to-s3:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Git clone the repository
-        uses: actions/checkout@v4
+  # upload-repo-to-s3:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Git clone the repository
+  #       uses: actions/checkout@v4
         
-      - name: Deploy repo to dev
-        uses: ./.github/actions/deploy-util
-        with:
-          role-to-assume: ${{ env.ROLE_TO_ASSUME }}
-          role-session-name: ${{ env.ROLE_TO_ASSUME_SESSION_NAME }}
-          aws-region: ${{ env.AWS_REGION }}
-          source: "."
-          destination: ${{ env.REPO_S3_LOCATION_URI }}
+  #     - name: Deploy repo to dev
+  #       uses: ./.github/actions/deploy-util
+  #       with:
+  #         role-to-assume: ${{ env.ROLE_TO_ASSUME }}
+  #         role-session-name: ${{ env.ROLE_TO_ASSUME_SESSION_NAME }}
+  #         aws-region: ${{ env.AWS_REGION }}
+  #         source: "."
+  #         destination: ${{ env.REPO_S3_LOCATION_URI }}
 
   deploy-dev:
     name: Deploy to Dev
     runs-on: ubuntu-latest
-    needs: upload-repo-to-s3
+    # needs: upload-repo-to-s3
     steps:
       - uses: actions/checkout@v4
       - name: Deploy repo to dev
@@ -47,7 +47,7 @@ jobs:
           role-to-assume: ${{ env.ROLE_TO_ASSUME }}
           role-session-name: ${{ env.ROLE_TO_ASSUME_SESSION_NAME }}
           aws-region: ${{ env.AWS_REGION }}
-          source: ${{ env.REPO_S3_LOCATION_URI }}
+          source: "."
           destination: ${{ env.DEV_S3_LOCATION_URI }}
 
   deploy-beta:
