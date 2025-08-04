@@ -27,5 +27,8 @@ runs:
 
     - name: Sync from source s3 location to destination s3 location
       run: |
-        aws s3 sync "${{ inputs.source }}" "${{ inputs.destination }}" --delete --exclude ".git/*" --exclude ".git"
+        aws s3 sync "${{ inputs.source }}" "${{ inputs.destination }}" \
+        --delete \
+        --exclude ".git/*" \
+        --exclude ".git"
       shell: bash
