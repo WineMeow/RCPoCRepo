@@ -54,6 +54,7 @@ jobs:
     name: Deploy to Beta
     runs-on: ubuntu-latest
     needs: deploy-dev
+    environment: approval-gate
     steps:
       - uses: actions/checkout@v4
       - name: Deploy repo to beta
@@ -70,6 +71,8 @@ jobs:
     name: Deploy to Gamma
     runs-on: ubuntu-latest
     needs: deploy-beta
+    environment: approval-gate
+
     steps:
       - uses: actions/checkout@v4
       - name: Deploy repo to gamma
@@ -86,7 +89,7 @@ jobs:
     name: Deploy to Prod
     runs-on: ubuntu-latest
     needs: deploy-gamma
-    environment: prod
+    environment: approval-gate
     steps:
       - uses: actions/checkout@v4
       - name: Deploy repo to dev
